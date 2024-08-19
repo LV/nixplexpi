@@ -15,6 +15,9 @@
   # Enables the generation of /boot/extlinux/extlinux.conf
   boot.loader.generic-extlinux-compatible.enable = true;
 
+  # Allow unfree packages; necessary for Plex media server
+  nixpkgs.config.allowUnfree = true;
+
   # networking.hostName = "nixos"; # Define your hostname.
   # Pick only one of the below networking options.
   # networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
@@ -70,6 +73,7 @@
   environment.systemPackages = with pkgs; [
     git
     neovim
+    plex
     wget
   ];
 
@@ -93,6 +97,12 @@
     set shiftwidth=2
     set autoindent
   '';
+
+  # Plex config
+  services.plex = {
+    enable = true;
+    openFirewall = true; # allow incoming connections to Plex through the firewall
+  };
 
   # Some programs need SUID wrappers, can be configured further or are
   # started in user sessions.
