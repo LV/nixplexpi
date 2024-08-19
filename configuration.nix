@@ -15,6 +15,8 @@
   # Enables the generation of /boot/extlinux/extlinux.conf
   boot.loader.generic-extlinux-compatible.enable = true;
 
+  boot.supportedFilesystems = [ "exfat" ];
+
   # Allow unfree packages; necessary for Plex media server
   nixpkgs.config.allowUnfree = true;
 
@@ -62,6 +64,20 @@
   # Enable touchpad support (enabled default in most desktopManager).
   # services.libinput.enable = true;
 
+  # SSD support
+  fileSystems."/mnt/external-ssd" = {
+    device = "/dev/sda1";
+    fsType = "exfat";
+    options = [
+      "defaults"
+      "nofail"
+      "x-systemd.automount"
+      "x-systemd.device-timeout=5"
+      "noauto"
+      "x-systemd.after=network-online.target"
+    ];
+  };
+
   # Define a user account. Don't forget to set a password with ‘passwd’.
   users.users.lv = {
     isNormalUser = true;
@@ -74,6 +90,7 @@
     git
     neovim
     plex
+    transmission
     wget
   ];
 
@@ -102,6 +119,25 @@
   services.plex = {
     enable = true;
     openFirewall = true; # allow incoming connections to Plex through the firewall
+  };
+
+  # Transmission (Bittorrent client) config
+  services.transmission = {
+    enable = true;
+    openFirewall = true;
+    openRPCPort = true;
+    home = "/var/lib/transmission";
+    settings = {
+      download-dir = "/mnt/external-ssd/media";
+      incomplete-dir = "/mnt/external-ssd/incomplete";
+      incomplete-dir-enabled = true;
+      rpc-bind-address = "0.0.0.0";
+      rpc-whitelist = "127.0.0.1,192.168.1.*";
+    };
+  };
+
+  systemd.services.transmission.serviceConfig = {
+    SupplementaryGroups = [ "users" ];
   };
 
   # Some programs need SUID wrappers, can be configured further or are
