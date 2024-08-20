@@ -15,12 +15,10 @@
   # Enables the generation of /boot/extlinux/extlinux.conf
   boot.loader.generic-extlinux-compatible.enable = true;
 
-  boot.supportedFilesystems = [ "exfat" ];
-
   # Allow unfree packages; necessary for Plex media server
   nixpkgs.config.allowUnfree = true;
 
-  # networking.hostName = "nixos"; # Define your hostname.
+  networking.hostName = "nixplexpi"; # Define your hostname.
   # Pick only one of the below networking options.
   # networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
   # networking.networkmanager.enable = true;  # Easiest to use and most distros use this by default.
@@ -90,8 +88,8 @@
     git
     neovim
     plex
-    transmission
     wget
+    qbittorrent-nox
   ];
 
   # Git config
@@ -119,26 +117,10 @@
   services.plex = {
     enable = true;
     openFirewall = true; # allow incoming connections to Plex through the firewall
+    user = "lv";
   };
+  systemd.services.plex.serviceConfig.ProtectHome = lib.mkForce false;
 
-  # Transmission (Bittorrent client) config
-  services.transmission = {
-    enable = true;
-    openFirewall = true;
-    openRPCPort = true;
-    home = "/var/lib/transmission";
-    settings = {
-      download-dir = "/mnt/external-ssd/media";
-      incomplete-dir = "/mnt/external-ssd/incomplete";
-      incomplete-dir-enabled = true;
-      rpc-bind-address = "0.0.0.0";
-      rpc-whitelist = "127.0.0.1,192.168.1.*";
-    };
-  };
-
-  systemd.services.transmission.serviceConfig = {
-    SupplementaryGroups = [ "users" ];
-  };
 
   # Some programs need SUID wrappers, can be configured further or are
   # started in user sessions.
@@ -150,6 +132,19 @@
 
   # List services that you want to enable:
 
+  # Launch QBittorrent
+  systemd.services.qbittorrent-nox = {
+    description = "qbittorrent-nox service";
+    after = [ "network.target" ];
+    wantedBy = [ "multi-user.target" ];
+    serviceConfig = {
+      Type = "simple";
+      User = "lv";
+      ExecStart = "${pkgs.qbittorrent-nox}/bin/qbittorrent-nox";
+      Restart = "on-failure";
+    };
+  };
+
   # Enable the OpenSSH daemon.
   services.openssh = {
     enable = true;
@@ -160,7 +155,7 @@
   };
 
   # Open ports in the firewall.
-  # networking.firewall.allowedTCPPorts = [ ... ];
+  networking.firewall.allowedTCPPorts = [ 8080 ];
   # networking.firewall.allowedUDPPorts = [ ... ];
   # Or disable the firewall altogether.
   # networking.firewall.enable = false;
